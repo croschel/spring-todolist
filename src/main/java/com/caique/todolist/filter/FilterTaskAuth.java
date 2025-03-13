@@ -43,6 +43,7 @@ public class FilterTaskAuth extends OncePerRequestFilter {
             if (!passVerified.verified) {
               response.sendError(401, "Non Authorized user");
             } else {
+              request.setAttribute("userId", user.getId());
               filterChain.doFilter(request, response);
             }
           }
