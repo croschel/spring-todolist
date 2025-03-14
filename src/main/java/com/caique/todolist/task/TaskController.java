@@ -1,7 +1,6 @@
 package com.caique.todolist.task;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.UUID;
 
 import org.springframework.beans.BeanUtils;
@@ -13,9 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.caique.todolist.utils.Utils;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -56,39 +56,19 @@ public class TaskController {
     if (task.isEmpty()) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found");
     }
-
-    TaskModel existingTask = task.get();
-
     // Set user-related fields from the existing task and request
-    UUID userId = (UUID) request.getAttribute("userId");
-    if (userId != null) {
-      existingTask.setUserId(userId);
+    UUID userIdFromReq = (UUID) request.getAttribute("userId");
+    if (!userIdFromReq.equals(task.get().getUserId())) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("This task does not belongs to you!");
     }
-
+    TaskModel existingTask = task.get();
+    existingTask.setUserId(userIdFromReq);
     existingTask.setId(id);
 
     // Use BeanUtils.copyProperties to update fields selectively
-    BeanUtils.copyProperties(taskPayload, existingTask, getNullPropertyNames(taskPayload));
+    BeanUtils.copyProperties(taskPayload, existingTask, Utils.getNullPropertyNames(taskPayload));
 
     var response = this.taskRepository.save(existingTask);
     return ResponseEntity.status(HttpStatus.OK).body(response);
-  }
-
-  private String[] getNullPropertyNames(Object source) {
-    return Arrays.stream(org.springframework.beans.BeanUtils.getPropertyDescriptors(source.getClass()))
-        .map(propertyDescriptor -> propertyDescriptor.getName())
-        .filter(propertyName -> {
-          try {
-            var readMethod = org.springframework.beans.BeanUtils.getPropertyDescriptor(source.getClass(), propertyName).getReadMethod();
-            if (readMethod == null) {
-              return false;
-            }
-            Object value = readMethod.invoke(source);
-            return value == null;
-          } catch (Exception e) {
-            return false;
-          }
-        })
-        .toArray(String[]::new);
   }
 }
