@@ -12,4 +12,4 @@ FROM openjdk:21-jdk-slim
 EXPOSE 8080
 COPY --from=builder /target/Todolist-1.0.0.jar Todolist-1.0.0.jar
 
-ENTRYPOINT ["java", "-jar", "Todolist-1.0.0.jar"]
+ENTRYPOINT ["java", "-jar", "todolist-1.0.0.jar"]
